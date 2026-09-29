@@ -152,4 +152,149 @@ count(DADOS, Subfamilia, sort = TRUE)
 
 write_xlsx(DADOS, "DADOSFINAL.xlsx")
 
+#fazendo os gráficos
+
+theme_set(theme_classic(base_size = 32))
+
+g1 <- ggplot(regioes, aes(x = valor, y = regiao_curta)) +
+  geom_col(fill = "#114F11", width = 0.7) +
+  geom_text(aes(label = number(valor, big.mark = ".")), hjust = -0.15, size = 9) +
+  facet_wrap(~ medida, scales = "free_x",
+             labeller = as_labeller(c(Registros = "Registros", Especies = "Espécies"))) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.35))) +
+  labs(x = NULL, y = NULL) +
+  theme_classic(base_size = 32) +
+  theme(strip.background = element_blank(),
+        strip.text = element_text(face = "bold"),
+        panel.spacing.x = unit(2.5, "lines"),
+        plot.margin = margin(t = 10, r = 20, b = 10, l = 10))
+
+g1
+
+
+cobertura <- DADOS %>%
+  mutate(cobertura = fct_lump_prop(coberturaSolo, prop = 0.01, other_level = "Outras classes")) %>%
+  count(cobertura) %>%
+  mutate(pct = n / sum(n),
+         cobertura = fct_reorder(cobertura, pct))
+
+g2 <- ggplot(cobertura, aes(x = pct, y = cobertura)) +
+  geom_col(fill = "#366899", width = 0.7) +
+  geom_text(aes(label = percent(pct, accuracy = 0.1, decimal.mark = ",")),
+            hjust = -0.15, size = 7) +
+  scale_x_continuous(labels = percent, expand = expansion(mult = c(0, 0.2))) +
+  labs(x = "Porcentagem dos registros", y = NULL)
+
+g2
+
+niveis_hab <- c(
+  "Especialista de Floresta",
+  "Generalista",
+  "Especialista de Área Aberta",
+  "Sem Classificação"
+)
+
+habitat <- DADOS %>%
+  filter(!is.na(regiao_curta)) %>%
+  group_by(regiao_curta) %>%
+  mutate(n_reg = n()) %>%
+  ungroup() %>%
+  mutate(
+    rotulo = fct_reorder(
+      paste0(
+        regiao_curta,
+        "\n(n = ",
+        number(n_reg, big.mark = "."),
+        ")"
+      ),
+      n_reg
+    ),
+    classificacaoFormiga = factor(
+      classificacaoFormiga,
+      levels = niveis_hab
+    )
+  )
+
+niveis_hab <- c(
+  "Especialista de Floresta",
+  "Generalista",
+  "Especialista de Área Aberta",
+  "Sem Classificação"
+)
+
+habitat <- DADOS %>%
+  filter(!is.na(regiao_curta)) %>%
+  group_by(regiao_curta) %>%
+  mutate(n_reg = n()) %>%
+  ungroup() %>%
+  mutate(
+    rotulo = fct_reorder(
+      paste0(
+        regiao_curta,
+        "\n(n = ",
+        number(n_reg, big.mark = "."),
+        ")"
+      ),
+      n_reg
+    ),
+    classificacaoFormiga = factor(
+      classificacaoFormiga,
+      levels = niveis_hab
+    )
+  )
+
+g3 <- ggplot(
+  habitat,
+  aes(
+    y = rotulo,
+    fill = classificacaoFormiga
+  )
+) +
+  geom_bar(
+    position = "fill",
+    width = 0.7
+  ) +
+  scale_x_continuous(
+    labels = percent,
+    breaks = seq(0, 1, 0.1),
+    expand = expansion(mult = c(0, 0.02))
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Especialista de Floresta" = "#2E7D32",
+      "Generalista" = "#F9A825",
+      "Especialista de Área Aberta" = "#8D6E63",
+      "Sem Classificação" = "grey70"
+    )
+  ) +
+  labs(
+    x = "Porcentagem dos registros",
+    y = NULL,
+    fill = NULL
+  ) +
+  theme_classic(
+    base_size = 18,
+    base_family = "Times New Roman"
+  ) +
+  theme(
+    axis.text.y = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    axis.title.x = element_text(size = 18),
+    
+    legend.position = "bottom",
+    legend.text = element_text(size = 15),
+    
+    legend.key.size = unit(0.7, "cm"),
+    legend.spacing.x = unit(0.4, "cm"),
+    
+    plot.margin = margin(10, 20, 10, 20)
+  ) +
+  guides(
+    fill = guide_legend(
+      nrow = 2,
+      byrow = TRUE
+    )
+  )
+
+g3
 
